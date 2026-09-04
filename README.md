@@ -7,8 +7,8 @@ A model rocket avionics payload built around an Arduino Nano and a BMP280 barome
 - Arduino Nano
 - BMP280 barometric pressure/temperature sensor (I2C)
 - microSD card module (SPI)
-- [Your battery/power setup here]
-- [Your enclosure/mounting details here]
+- Utilized 1S battery (3.3V)
+- Small model rocket airframe
 
 **Wiring**
 
@@ -28,7 +28,7 @@ A model rocket avionics payload built around an Arduino Nano and a BMP280 barome
 
 ## How It Works
 
-The BMP280 measures air pressure, which decreases predictably with altitude. Right before launch, the code takes an averaged pressure reading on the pad as a reference point. Every subsequent reading gets converted to a height above the pad using the standard barometric altitude formula (handled internally by the Adafruit_BMP280 library).
+The BMP280 measures air pressure, which decreases predictably with altitude. Right before launch, the code takes an averaged pressure reading on the pad as a reference point. Every following reading gets converted to a height above the pad using the barometric pressure altitude formula (coded internally by the Adafruit_BMP280 library).
 
 Apogee is tracked by continuously comparing each new altitude reading against the highest value seen so far during the flight. A simple threshold-based check on altitude looks for two events:
 - **Launch**: a fast enough increase in altitude
@@ -39,13 +39,9 @@ Once landing is detected, logging stops and apogee is written to the SD card alo
 ## Repository Contents
 
 - `rocket_altimeter.ino` — main flight computer sketch
-- `plot_comparison.py` — plots the OpenRocket simulation against a logged `flight.csv` and reports the apogee difference
-- `openrocket_sim_digitized.csv` — theoretical altitude curve read off the OpenRocket simulation plot (export directly from OpenRocket for exact values — File > Export flight data)
-- `flight.csv` — real flight log, written by the sketch to the SD card (populate this after an actual launch)
-
-### A note on the demo plot
-
-Before flying, `plot_comparison.py` was tested against a synthetic dataset (`pipeline_test_synthetic_data.csv`) generated to look like plausible sensor output — this is **not** flight data and the file, its header, and the plot title all say so explicitly. It exists only to confirm the parsing/plotting code works correctly before it matters, the same way you'd unit-test any data pipeline before pointing it at real hardware. Once an actual flight log exists, that synthetic file gets deleted and `flight.csv` (real data) is what the plot and this README should reference.
+- `plot_comparison.py` — plots the OpenRocket simulation against logged data and reports the apogee difference
+- `OpenRocket_Sim_Data.csv` — theoretical altitude curve read off the OpenRocket simulation plot (export directly from OpenRocket for exact values — File > Export flight data)
+- `DIYAltimeter_experimental_data.csv` — real flight log, written by the sketch to the SD card (populate this after an actual launch)
 
 ## Dependencies
 
@@ -64,17 +60,21 @@ The flight computer's launch/landing detection logic and altitude range were des
 
 This simulation was used to sanity-check the code's launch-detection threshold and expected sample counts, and to size the landing-detection window against the expected descent rate.
 
-## Status / Testing
+## Testing
+The system was assembled and tested as a functional flight-data logging system before being flown on the model rocket.
 
-<!-- TODO: replace this section once you've run real hardware -->
-[Describe how you actually validated this: e.g. bench test results, ground test conditions, or actual flight data. Include your real plot here once you have one. Don't fill this in with anything you didn't actually measure.]
+Initial testing showed a problem with the pressure readings during the first launch. The resulting altitude data was skewed; this was likely because the air pressure readings by the BMP280 sensor were not accurate to the atmospheric pressure. The rocket airframe was modified by adding small vent holes to improve accuracy of BMP280 readings. This modification was intended to produce more representative pressure measurements during flight.
+
+The physical electronics assembly also required several iterations of wiring and component placement. Because of the limited 2.5 cm airframe diameter, the final design used a vertically stacked arrangement of the electronics rather than placing all components side by side.
+
+Flight data is stored on the microSD card as a CSV file and can be processed using plot_comparison.py to compare measured altitude against the OpenRocket simulation.
 
 ## Known Limitations / Future Work
 
-- No temperature compensation or per-flight sensor calibration beyond the pad-pressure reference
-- Apogee is only written to SD, not to non-volatile memory (EEPROM) — if the board loses power right after landing before the final write completes, apogee could be lost
+- No temperature compensation or flight sensor calibration beyond the pad-pressure reference at the start of every launch
+- Since altitude and apogee are recorded on the SD card, the board losing power will erase data from SD card module. EEPROM (on board memory) can be used to fix this issue.
 - SD file is opened/closed every loop for write safety, which caps the max practical sample rate — buffering in RAM and flushing periodically would allow faster sampling
-- Launch/landing thresholds are tuned for this specific motor and descent rate and would need retuning for a different rocket
+- Launch and landing thresholds are tuned for this specific motor and rocket and would need retuning for a different rocket or motor.
 
 ## License
 
