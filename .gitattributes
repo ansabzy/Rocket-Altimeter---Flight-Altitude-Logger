@@ -1,1 +1,2 @@
 *.ino linguist-language=C++
+*.ino linguist-detectable=true
